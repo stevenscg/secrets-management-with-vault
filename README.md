@@ -4,6 +4,8 @@ This repository provides a Vagrant environment with HashiCorp Vault, Consul, Nom
 and supporting tools installed that can be used to demonstrate many aspects of a
 typical "Hashistack".
 
+This project goes with the [Using HashiCorp Vault for Secrets Management](https://speakerdeck.com/stevenscg/using-hashicorp-vault-for-secrets-management) presentation delivered at Gluecon 2017.
+
 
 ### Prerequisites
 * Vagrant
