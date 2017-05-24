@@ -1,0 +1,129 @@
+---
+#
+# Ansible playbook for a developer server featuring Consul, Vault, and Nomad
+#
+# @author Chris Stevens https://github.com/stevenscg
+#
+# Usage
+#   Note: Run automatically with "vagrant up" and "vagrant provision"
+#   ansible-playbook provision/playbook.yml -b -i .vagrant/provisioners/ansible/inventory
+#
+
+
+- hosts: all
+  gather_facts: yes
+
+  pre_tasks:
+    - name: Install additional OS packages
+      yum:
+        name: "{{ item }}"
+        state: latest
+      with_items:
+        - python-httplib2
+        - vim-enhanced
+        - telnet
+        - nc
+
+  roles:
+    - role: repo-remi
+      tags:
+        - repos
+
+    - role: nginx
+      tags:
+        - nginx
+
+    - role: mysql
+      tags:
+        - mysql
+
+    - role: network-dummy
+      tags:
+        - consul
+        - docker
+        - dnsmasq
+        - network
+
+    - role: docker
+      tags:
+        - docker
+
+    # Notes:
+    #   Set consul_client_address to "169.254.1.1" when running containers with nomad and/or net=host.
+    - role: consul
+      consul_is_server: true
+      consul_datacenter: local
+      consul_bootstrap_expect: 1
+      consul_bind_address: "{{ ansible_default_ipv4['address'] }}"
+      consul_client_address: "127.0.0.1"
+      consul_advertise_address: "{{ ansible_default_ipv4['address'] }}"
+      consul_statsd_address: "127.0.0.1:8125"
+      consul_install_dnsmasq: true
+      consul_raft_protocol: 3
+      consul_install_ui: true
+      tags:
+        - consul
+
+    - role: vault
+      vault_actions:
+        - users
+        - tmp-ca
+        - install
+        - init
+        - unseal
+        - token
+        - audit
+        - auth
+        - policy
+        - mount
+        - secret
+        - helper
+        # - tls
+      # install
+      vault_server: true
+      vault_listener_address: 0.0.0.0:8200
+      vault_telemetry_statsd_address: 127.0.0.1:8125
+      # init / token /unseal
+      vault_keys_file: /etc/vault/unseal_keys
+      vault_init_gpg_required: false
+      # mount
+      vault_mount_mysql_user: root
+      vault_mount_mysql_password: root
+      vault_mount_mysql_db_alpha_service: 127.0.0.1
+      vault_mount_mysql_db_bravo_service: 127.0.0.1
+      vault_mount_mysql_verify_connection: false
+      # users
+      vault_users_users:
+        - vagrant
+      # helper
+      vault_helpers:
+        - dev-auth
+      vault_client_env_role: nomad-server
+      tags:
+        - vault
+
+    - role: nomad
+      nomad_server: true
+      nomad_client: true
+      nomad_region: local
+      nomad_datacenter: local
+      nomad_server_bootstrap_expect: 1
+      nomad_leave_on_interrupt: true
+      nomad_client_auto_join: true
+      nomad_server_auto_join: true
+      nomad_vault_enabled: true
+      # create_from_role is not used with a root token (as is used on dev):
+      # nomad_vault_create_from_role: nomad-cluster
+      nomad_consul_auto_advertise: true
+      nomad_client_options:
+        docker.auth.config: /home/nomad/.docker/config.json
+        driver.raw_exec.enable: "1"
+        driver.exec: "1"
+      tags:
+        - nomad
+
+  handlers:
+    - name: Restart nginx
+      service:
+        name: nginx
+        state: restarted

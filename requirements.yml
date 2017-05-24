@@ -1,0 +1,47 @@
+---
+#
+# Ansible required roles
+#
+
+- src: geerlingguy.repo-remi
+  name: repo-remi
+
+- src: geerlingguy.php
+  name: php
+
+- src: geerlingguy.composer
+  name: composer
+
+- src: geerlingguy.docker
+  name: docker
+
+- src: geerlingguy.memcached
+  name: memcached
+
+- src: geerlingguy.mysql
+  name: mysql
+
+- src: geerlingguy.nodejs
+  name: nodejs
+
+- src: geerlingguy.nginx
+  name: nginx
+
+- src: dmichel1.statsd
+  name: statsd
+
+- src: https://github.com/stevenscg/ansible-role-network-dummy
+  version: master
+  name: network-dummy
+
+- src: https://github.com/stevenscg/ansible-role-consul
+  version: master
+  name: consul
+
+- src: https://github.com/stevenscg/ansible-role-vault
+  version: master
+  name: vault
+
+- src: https://github.com/stevenscg/ansible-role-nomad
+  version: master
+  name: nomad
